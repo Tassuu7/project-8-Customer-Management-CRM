@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-/**
- * Automated Production Archive Packager
- */
+"""
+Automated Production Archive Packager
+"""
 
 import os
 import zipfile
