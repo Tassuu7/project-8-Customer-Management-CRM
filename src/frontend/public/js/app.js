@@ -18,7 +18,7 @@ class App {
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        document.getElementById('global-search')?.focus();
+        document.getElementById('global-search')&#10003;.focus();
       }
     });
   }
@@ -118,7 +118,7 @@ class App {
           <div class="glass-panel" style="padding: 22px;">
             <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ANNUAL RUN RATE (ARR)</div>
             <div style="font-size: 1.9rem; font-weight: 800; color: #fff; margin: 8px 0;">$${(data.financials.arr / 1000).toFixed(0)}k</div>
-            <div style="color: var(--accent-success); font-size: 0.85rem; font-weight: 600;">? +${data.financials.growthPercentage}% YoY Growth</div>
+            <div style="color: var(--accent-success); font-size: 0.85rem; font-weight: 600;">&#10003; +${data.financials.growthPercentage}% YoY Growth</div>
           </div>
           <div class="glass-panel" style="padding: 22px;">
             <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE ACCOUNTS</div>
@@ -146,9 +146,9 @@ class App {
             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">Customer Health Distribution</h3>
             <div id="chart-health-donut" style="display: flex; justify-content: center; margin: 16px 0;"></div>
             <div style="display: flex; justify-content: space-around; font-size: 0.85rem; color: var(--text-secondary);">
-              <div><span style="color: #10b981;">?</span> Healthy (85%)</div>
-              <div><span style="color: #f59e0b;">?</span> Neutral (10%)</div>
-              <div><span style="color: #ef4444;">?</span> At-Risk (5%)</div>
+              <div><span style="color: #10b981;">&#10003;</span> Healthy (85%)</div>
+              <div><span style="color: #f59e0b;">&#10003;</span> Neutral (10%)</div>
+              <div><span style="color: #ef4444;">&#10003;</span> At-Risk (5%)</div>
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ class App {
   async renderCustomers(container) {
     container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading Customers...</div>';
     try {
-      const res = await window.api.get('/customers?limit=50');
+      const res = await window.api.get('/customers&#10003;limit=50');
       const accounts = res.data;
 
       container.innerHTML = `
@@ -218,7 +218,7 @@ class App {
                     <td>
                       <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; width: 60px;">
-                          <div style="height: 100%; width: ${a.healthScore}%; background: ${a.healthScore > 80 ? '#10b981' : (a.healthScore > 60 ? '#f59e0b' : '#ef4444')}; border-radius: 3px;"></div>
+                          <div style="height: 100%; width: ${a.healthScore}%; background: ${a.healthScore > 80 &#10003; '#10b981' : (a.healthScore > 60 &#10003; '#f59e0b' : '#ef4444')}; border-radius: 3px;"></div>
                         </div>
                         <span style="font-weight: 700; font-size: 0.85rem;">${a.healthScore}%</span>
                       </div>
@@ -254,13 +254,13 @@ class App {
       container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div style="display: flex; align-items: center; gap: 16px;">
-            <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#customers'">? Back</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#customers'">&#10003; Back</button>
             <div>
               <h1 style="font-size: 1.8rem; font-weight: 800;">${account.name}</h1>
               <div style="display: flex; gap: 8px; margin-top: 4px;">
                 <span class="badge badge-${account.tier.toLowerCase()}">${account.tier} Tier</span>
                 <span class="badge badge-${account.churnRisk}">${account.churnRisk.toUpperCase()} CHURN RISK</span>
-                <span style="color: var(--text-muted); font-size: 0.85rem;">${account.industry} ? ${account.domain}</span>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">${account.industry} &#10003; ${account.domain}</span>
               </div>
             </div>
           </div>
@@ -288,8 +288,8 @@ class App {
               ${contacts.map(c => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                   <div>
-                    <div style="font-weight: 600; color: #fff;">${c.firstName} ${c.lastName} ${c.isPrimary ? '<span class="badge badge-growth">Primary</span>' : ''}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">${c.title || ''} ? ${c.email}</div>
+                    <div style="font-weight: 600; color: #fff;">${c.firstName} ${c.lastName} ${c.isPrimary &#10003; '<span class="badge badge-growth">Primary</span>' : ''}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${c.title || ''} &#10003; ${c.email}</div>
                   </div>
                   <div style="font-size: 0.85rem; color: var(--text-secondary);">${c.phone || ''}</div>
                 </div>
@@ -318,14 +318,14 @@ class App {
             <div class="timeline-feed">
               ${recentActivities.map(act => `
                 <div class="timeline-item">
-                  <div class="timeline-icon-badge badge-${act.type.toLowerCase()}">?</div>
+                  <div class="timeline-icon-badge badge-${act.type.toLowerCase()}">&#10003;</div>
                   <div class="timeline-card">
                     <div class="timeline-header">
                       <div class="timeline-title">${act.title}</div>
                       <div class="timeline-date">${new Date(act.performedAt).toLocaleDateString()}</div>
                     </div>
                     <div style="font-size: 0.88rem; color: var(--text-secondary);">${act.description || ''}</div>
-                    ${act.outcome ? `<div style="font-size: 0.8rem; color: var(--accent-success); margin-top: 6px;">Outcome: ${act.outcome}</div>` : ''}
+                    ${act.outcome &#10003; `<div style="font-size: 0.8rem; color: var(--accent-success); margin-top: 6px;">Outcome: ${act.outcome}</div>` : ''}
                   </div>
                 </div>
               `).join('')}
@@ -369,7 +369,7 @@ class App {
                       <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">${l.firstName} ${l.lastName}</div>
                       <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span class="badge badge-growth">Score: ${l.score}/100</span>
-                        <button class="btn btn-primary btn-sm" onclick="window.app.convertLeadQuick('${l.id}')">Convert ?</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.app.convertLeadQuick('${l.id}')">Convert &#10003;</button>
                       </div>
                     </div>
                   `).join('')}
@@ -400,7 +400,7 @@ class App {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div>
             <h1 style="font-size: 1.8rem; font-weight: 800;">Opportunity Pipeline</h1>
-            <p style="color: var(--text-secondary);">Weighted Forecasting: <span style="color: var(--accent-success); font-weight: 700;">$${metrics.weightedPipelineValue.toLocaleString()}</span> ? Win Rate: ${metrics.winRatePercentage}%</p>
+            <p style="color: var(--text-secondary);">Weighted Forecasting: <span style="color: var(--accent-success); font-weight: 700;">$${metrics.weightedPipelineValue.toLocaleString()}</span> &#10003; Win Rate: ${metrics.winRatePercentage}%</p>
           </div>
         </div>
 
@@ -468,7 +468,7 @@ class App {
                     <td style="font-weight: 700; color: var(--accent-secondary);">${t.ticketNumber}</td>
                     <td style="font-weight: 600; color: #fff;">${t.subject}</td>
                     <td><span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span></td>
-                    <td><span class="badge badge-${t.status === 'Resolved' ? 'low' : 'growth'}">${t.status}</span></td>
+                    <td><span class="badge badge-${t.status === 'Resolved' &#10003; 'low' : 'growth'}">${t.status}</span></td>
                     <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(t.resolutionDueAt).toLocaleString()}</td>
                   </tr>
                 `).join('')}
@@ -503,9 +503,9 @@ class App {
               <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div>
                   <div style="font-weight: 600; color: #fff;">${task.title}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} ? <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span></div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} &#10003; <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span></div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.app.completeTask('${task.id}')">? Done</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.app.completeTask('${task.id}')">&#10003; Done</button>
               </div>
             `).join('')}
           </div>
@@ -561,10 +561,10 @@ class App {
                     <td>$${inv.subtotal.toLocaleString()}</td>
                     <td>$${inv.taxAmount.toLocaleString()}</td>
                     <td style="font-weight: 800; color: var(--accent-success);">$${inv.total.toLocaleString()}</td>
-                    <td><span class="badge badge-${inv.status === 'Paid' ? 'low' : 'growth'}">${inv.status}</span></td>
+                    <td><span class="badge badge-${inv.status === 'Paid' &#10003; 'low' : 'growth'}">${inv.status}</span></td>
                     <td>${inv.dueDate}</td>
                     <td>
-                      ${inv.status !== 'Paid' ? `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981;">? Cleared</span>'}
+                      ${inv.status !== 'Paid' &#10003; `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981;">&#10003; Cleared</span>'}
                     </td>
                   </tr>
                 `).join('')}
@@ -597,7 +597,7 @@ class App {
             <div class="glass-panel" style="padding: 22px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">${wf.name}</div>
-                <span class="badge badge-${wf.isActive ? 'low' : 'standard'}">${wf.isActive ? 'Active' : 'Paused'}</span>
+                <span class="badge badge-${wf.isActive &#10003; 'low' : 'standard'}">${wf.isActive &#10003; 'Active' : 'Paused'}</span>
               </div>
               <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px;">${wf.description || ''}</p>
               <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.82rem;">
@@ -616,7 +616,7 @@ class App {
   async renderAudits(container) {
     container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading CDC Audit Trail...</div>';
     try {
-      const res = await window.api.get('/audits?limit=50');
+      const res = await window.api.get('/audits&#10003;limit=50');
       const logs = res.data;
 
       container.innerHTML = `
@@ -641,7 +641,7 @@ class App {
                 ${logs.map(l => `
                   <tr>
                     <td style="font-size: 0.82rem; color: var(--text-muted);">${new Date(l.timestamp).toLocaleString()}</td>
-                    <td><span class="badge badge-${l.action === 'CREATE' ? 'low' : (l.action === 'DELETE' ? 'high' : 'growth')}">${l.action}</span></td>
+                    <td><span class="badge badge-${l.action === 'CREATE' &#10003; 'low' : (l.action === 'DELETE' &#10003; 'high' : 'growth')}">${l.action}</span></td>
                     <td style="font-weight: 600; color: #fff;">${l.entityType}</td>
                     <td>${l.actorEmail || 'System'}</td>
                     <td style="font-family: monospace; color: var(--text-muted);">${l.ipAddress || 'Internal'}</td>
