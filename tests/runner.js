@@ -21,10 +21,10 @@ global.it = (testName, fn) => {
   try {
     fn();
     passedTests++;
-    console.log(`  \x1b[32m?\x1b[0m ${testName}`);
+    console.log(`  \x1b[32m[PASS]\x1b[0m ${testName}`);
   } catch (err) {
     failedTests++;
-    console.log(`  \x1b[31m?\x1b[0m ${testName}`);
+    console.log(`  \x1b[31m[FAIL]\x1b[0m ${testName}`);
     failures.push({ testName, error: err.message });
   }
 };
