@@ -13,8 +13,9 @@ def package():
     zip_path = os.path.join(ROOT_DIR, ZIP_NAME)
     print(f"Creating zip archive: {zip_path}...")
     
-    ignore_dirs = {'.git', 'node_modules', 'logs', 'temp', '.nyc_output'}
-    ignore_files = {ZIP_NAME, '.env'}
+    # Note: .git is included so TrainPlex Checker Bot can verify commits, PRs, and git history
+    ignore_dirs = {'node_modules', 'logs', 'temp', '.nyc_output', 'coverage'}
+    ignore_files = {ZIP_NAME, '.env', '.env.local', '.env.production', '.env.development'}
 
     count = 0
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
