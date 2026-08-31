@@ -1,0 +1,15 @@
+# Master Build Engine for OmniCustomer 360 CRM
+import os
+import sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+def write_file(rel_path, content):
+    full_path = os.path.join(ROOT, rel_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, 'w', encoding='utf-8') as f:
+        f.write(content.strip() + '\n')
+    print(f'  [OK] {rel_path} ({len(content.splitlines())} LOC)')
+
+if __name__ == '__main__':
+    print('Master Build Engine initialized.')
