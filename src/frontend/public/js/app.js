@@ -1,4 +1,7 @@
-// OmniCustomer 360 - Single Page Application Main Engine
+/**
+ * OmniCustomer 360 - Frontend Single Page Application Engine
+ * Comprehensive Authentication (Login, Sign-Up, Logout) & Customer 360 Management
+ */
 
 class App {
   constructor() {
@@ -18,7 +21,8 @@ class App {
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        document.getElementById('global-search')&#10003;.focus();
+        const searchInput = document.getElementById('global-search');
+        if (searchInput) searchInput.focus();
       }
     });
   }
@@ -26,17 +30,8 @@ class App {
   async checkAuth() {
     const token = localStorage.getItem('apex_crm_token');
     if (!token) {
-      try {
-        const loginRes = await window.api.post('/auth/login', {
-          email: 'admin@apex-crm.enterprise',
-          password: 'Admin@123456'
-        });
-        window.api.setToken(loginRes.data.accessToken);
-        this.currentUser = loginRes.data.user;
-        this.updateUserUI();
-      } catch (err) {
-        console.warn('Auto-login ready.');
-      }
+      this.currentUser = null;
+      this.updateUserUI();
       return;
     }
 
@@ -46,21 +41,89 @@ class App {
       this.updateUserUI();
     } catch (err) {
       window.api.setToken('');
+      this.currentUser = null;
+      this.updateUserUI();
     }
   }
 
   updateUserUI() {
-    if (!this.currentUser) return;
     const nameEl = document.getElementById('header-user-name');
     const roleEl = document.getElementById('header-user-role');
-    if (nameEl) nameEl.textContent = this.currentUser.fullName || this.currentUser.firstName;
-    if (roleEl) roleEl.textContent = this.currentUser.roleName || 'User';
+    const authActionsEl = document.getElementById('sidebar-auth-actions');
+
+    if (this.currentUser) {
+      if (nameEl) nameEl.textContent = this.currentUser.fullName || this.currentUser.firstName || 'Sarah Connor';
+      if (roleEl) roleEl.textContent = this.currentUser.roleName || 'Super Administrator';
+      if (authActionsEl) {
+        authActionsEl.innerHTML = `
+          <button class="btn btn-secondary btn-sm" onclick="window.app.logout()" style="width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Log Out</span>
+          </button>
+        `;
+      }
+    } else {
+      if (nameEl) nameEl.textContent = 'Not Logged In';
+      if (roleEl) roleEl.textContent = 'Guest';
+      if (authActionsEl) {
+        authActionsEl.innerHTML = `
+          <button class="btn btn-primary btn-sm" onclick="window.location.hash='#login'" style="width: 100%; margin-top: 10px;">
+            <span>Sign In &rarr;</span>
+          </button>
+        `;
+      }
+    }
+  }
+
+  async logout() {
+    try {
+      await window.api.post('/auth/logout', {});
+    } catch (e) {}
+    window.api.setToken('');
+    this.currentUser = null;
+    this.updateUserUI();
+    this.showToast('You have been logged out successfully.', 'info');
+    window.location.hash = '#login';
+  }
+
+  async loginWithCredentials(email, password) {
+    try {
+      const res = await window.api.post('/auth/login', { email, password });
+      window.api.setToken(res.data.accessToken);
+      this.currentUser = res.data.user;
+      this.updateUserUI();
+      this.showToast(`Welcome back, ${this.currentUser.fullName}!`, 'success');
+      window.location.hash = '#dashboard';
+    } catch (err) {
+      this.showToast(err.message || 'Invalid email or password', 'error');
+    }
+  }
+
+  async signupWithCredentials(payload) {
+    try {
+      const res = await window.api.post('/auth/signup', payload);
+      window.api.setToken(res.data.accessToken);
+      this.currentUser = res.data.user;
+      this.updateUserUI();
+      this.showToast(`Account created! Welcome, ${this.currentUser.fullName}!`, 'success');
+      window.location.hash = '#dashboard';
+    } catch (err) {
+      this.showToast(err.message || 'Registration failed', 'error');
+    }
   }
 
   handleRoute() {
     const hash = window.location.hash.slice(1) || 'dashboard';
     const [route, param] = hash.split('/');
     this.currentRoute = route;
+
+    if (!this.currentUser && route !== 'login' && route !== 'signup') {
+      const token = localStorage.getItem('apex_crm_token');
+      if (!token) {
+        window.location.hash = '#login';
+        return;
+      }
+    }
 
     document.querySelectorAll('.nav-link').forEach(link => {
       link.classList.remove('active');
@@ -73,6 +136,8 @@ class App {
     if (!viewContainer) return;
 
     switch (route) {
+      case 'login': this.renderLogin(viewContainer); break;
+      case 'signup': this.renderSignup(viewContainer); break;
       case 'dashboard': this.renderDashboard(viewContainer); break;
       case 'customers': this.renderCustomers(viewContainer); break;
       case 'customer-360': this.renderCustomer360(viewContainer, param); break;
@@ -97,6 +162,117 @@ class App {
     setTimeout(() => { toast.remove(); }, 4000);
   }
 
+  renderLogin(container) {
+    container.innerHTML = `
+      <div style="max-width: 480px; margin: 30px auto; padding: 36px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: linear-gradient(135deg, #6366f1, #06b6d4); border-radius: 14px; margin-bottom: 14px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+          </div>
+          <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;">Sign In to OmniCustomer 360</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">Enterprise Customer Management & CRM</p>
+        </div>
+
+        <form id="login-form" onsubmit="event.preventDefault(); window.app.handleLoginForm();">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Work Email</label>
+            <input type="email" id="login-email" required value="admin@apex-crm.enterprise" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 0.95rem;">
+          </div>
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Password</label>
+            <input type="password" id="login-password" required value="Admin@123456" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 0.95rem;">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; margin-bottom: 16px;">
+            Sign In &rarr;
+          </button>
+        </form>
+
+        <div style="text-align: center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); margin-bottom: 18px;">
+          <span style="color: var(--text-muted); font-size: 0.88rem;">Need an account?</span>
+          <a href="#signup" style="color: var(--accent-primary); font-weight: 700; margin-left: 6px; text-decoration: none;">Create Account</a>
+        </div>
+
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-secondary); margin-bottom: 8px; text-transform: uppercase;">1-Click Demo Login Roles:</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" onclick="window.app.quickLogin('admin@apex-crm.enterprise', 'Admin@123456')" style="justify-content: flex-start;">
+              ?? <strong>Super Admin</strong> (admin@apex-crm.enterprise)
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="window.app.quickLogin('sales.vp@apex-crm.enterprise', 'Sales@123456')" style="justify-content: flex-start;">
+              ?? <strong>VP Sales</strong> (sales.vp@apex-crm.enterprise)
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="window.app.quickLogin('support.lead@apex-crm.enterprise', 'Support@123456')" style="justify-content: flex-start;">
+              ?? <strong>Support Lead</strong> (support.lead@apex-crm.enterprise)
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderSignup(container) {
+    container.innerHTML = `
+      <div style="max-width: 480px; margin: 30px auto; padding: 36px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;">Create Your Account</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">Join OmniCustomer 360 CRM Platform</p>
+        </div>
+
+        <form id="signup-form" onsubmit="event.preventDefault(); window.app.handleSignupForm();">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">First Name</label>
+              <input type="text" id="signup-firstname" required placeholder="Jane" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Last Name</label>
+              <input type="text" id="signup-lastname" required placeholder="Doe" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+            </div>
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Company</label>
+            <input type="text" id="signup-company" required placeholder="Acme Global Solutions" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Work Email</label>
+            <input type="email" id="signup-email" required placeholder="jane@company.io" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+          </div>
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Password</label>
+            <input type="password" id="signup-password" required minlength="8" placeholder="At least 8 characters" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; margin-bottom: 16px;">
+            Complete Registration &rarr;
+          </button>
+        </form>
+
+        <div style="text-align: center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <span style="color: var(--text-muted); font-size: 0.88rem;">Already registered?</span>
+          <a href="#login" style="color: var(--accent-primary); font-weight: 700; margin-left: 6px; text-decoration: none;">Sign In</a>
+        </div>
+      </div>
+    `;
+  }
+
+  handleLoginForm() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    this.loginWithCredentials(email, password);
+  }
+
+  handleSignupForm() {
+    const firstName = document.getElementById('signup-firstname').value;
+    const lastName = document.getElementById('signup-lastname').value;
+    const company = document.getElementById('signup-company').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    this.signupWithCredentials({ firstName, lastName, company, email, password, role: 'Super Administrator' });
+  }
+
+  quickLogin(email, password) {
+    this.loginWithCredentials(email, password);
+  }
+
   async renderDashboard(container) {
     container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading Executive Dashboard...</div>';
     try {
@@ -118,7 +294,7 @@ class App {
           <div class="glass-panel" style="padding: 22px;">
             <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ANNUAL RUN RATE (ARR)</div>
             <div style="font-size: 1.9rem; font-weight: 800; color: #fff; margin: 8px 0;">$${(data.financials.arr / 1000).toFixed(0)}k</div>
-            <div style="color: var(--accent-success); font-size: 0.85rem; font-weight: 600;">&#10003; +${data.financials.growthPercentage}% YoY Growth</div>
+            <div style="color: var(--accent-success); font-size: 0.85rem; font-weight: 600;">&uarr; +${data.financials.growthPercentage}% YoY Growth</div>
           </div>
           <div class="glass-panel" style="padding: 22px;">
             <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE ACCOUNTS</div>
@@ -146,9 +322,9 @@ class App {
             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">Customer Health Distribution</h3>
             <div id="chart-health-donut" style="display: flex; justify-content: center; margin: 16px 0;"></div>
             <div style="display: flex; justify-content: space-around; font-size: 0.85rem; color: var(--text-secondary);">
-              <div><span style="color: #10b981;">&#10003;</span> Healthy (85%)</div>
-              <div><span style="color: #f59e0b;">&#10003;</span> Neutral (10%)</div>
-              <div><span style="color: #ef4444;">&#10003;</span> At-Risk (5%)</div>
+              <div><span style="color: #10b981;">&bull;</span> Healthy (85%)</div>
+              <div><span style="color: #f59e0b;">&bull;</span> Neutral (10%)</div>
+              <div><span style="color: #ef4444;">&bull;</span> At-Risk (5%)</div>
             </div>
           </div>
         </div>
@@ -177,7 +353,7 @@ class App {
   async renderCustomers(container) {
     container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading Customers...</div>';
     try {
-      const res = await window.api.get('/customers&#10003;limit=50');
+      const res = await window.api.get('/customers?limit=50');
       const accounts = res.data;
 
       container.innerHTML = `
@@ -218,7 +394,7 @@ class App {
                     <td>
                       <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; width: 60px;">
-                          <div style="height: 100%; width: ${a.healthScore}%; background: ${a.healthScore > 80 &#10003; '#10b981' : (a.healthScore > 60 &#10003; '#f59e0b' : '#ef4444')}; border-radius: 3px;"></div>
+                          <div style="height: 100%; width: ${a.healthScore}%; background: ${a.healthScore > 80 ? '#10b981' : (a.healthScore > 60 ? '#f59e0b' : '#ef4444')}; border-radius: 3px;"></div>
                         </div>
                         <span style="font-weight: 700; font-size: 0.85rem;">${a.healthScore}%</span>
                       </div>
@@ -254,13 +430,13 @@ class App {
       container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div style="display: flex; align-items: center; gap: 16px;">
-            <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#customers'">&#10003; Back</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#customers'">&larr; Back</button>
             <div>
               <h1 style="font-size: 1.8rem; font-weight: 800;">${account.name}</h1>
               <div style="display: flex; gap: 8px; margin-top: 4px;">
                 <span class="badge badge-${account.tier.toLowerCase()}">${account.tier} Tier</span>
                 <span class="badge badge-${account.churnRisk}">${account.churnRisk.toUpperCase()} CHURN RISK</span>
-                <span style="color: var(--text-muted); font-size: 0.85rem;">${account.industry} &#10003; ${account.domain}</span>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">${account.industry} &bull; ${account.domain}</span>
               </div>
             </div>
           </div>
@@ -288,8 +464,8 @@ class App {
               ${contacts.map(c => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                   <div>
-                    <div style="font-weight: 600; color: #fff;">${c.firstName} ${c.lastName} ${c.isPrimary &#10003; '<span class="badge badge-growth">Primary</span>' : ''}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">${c.title || ''} &#10003; ${c.email}</div>
+                    <div style="font-weight: 600; color: #fff;">${c.firstName} ${c.lastName} ${c.isPrimary ? '<span class="badge badge-growth">Primary</span>' : ''}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${c.title || ''} &bull; ${c.email}</div>
                   </div>
                   <div style="font-size: 0.85rem; color: var(--text-secondary);">${c.phone || ''}</div>
                 </div>
@@ -318,14 +494,14 @@ class App {
             <div class="timeline-feed">
               ${recentActivities.map(act => `
                 <div class="timeline-item">
-                  <div class="timeline-icon-badge badge-${act.type.toLowerCase()}">&#10003;</div>
+                  <div class="timeline-icon-badge badge-${act.type.toLowerCase()}">&bull;</div>
                   <div class="timeline-card">
                     <div class="timeline-header">
                       <div class="timeline-title">${act.title}</div>
                       <div class="timeline-date">${new Date(act.performedAt).toLocaleDateString()}</div>
                     </div>
                     <div style="font-size: 0.88rem; color: var(--text-secondary);">${act.description || ''}</div>
-                    ${act.outcome &#10003; `<div style="font-size: 0.8rem; color: var(--accent-success); margin-top: 6px;">Outcome: ${act.outcome}</div>` : ''}
+                    ${act.outcome ? `<div style="font-size: 0.8rem; color: var(--accent-success); margin-top: 6px;">Outcome: ${act.outcome}</div>` : ''}
                   </div>
                 </div>
               `).join('')}
@@ -369,7 +545,7 @@ class App {
                       <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">${l.firstName} ${l.lastName}</div>
                       <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span class="badge badge-growth">Score: ${l.score}/100</span>
-                        <button class="btn btn-primary btn-sm" onclick="window.app.convertLeadQuick('${l.id}')">Convert &#10003;</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.app.convertLeadQuick('${l.id}')">Convert &rarr;</button>
                       </div>
                     </div>
                   `).join('')}
@@ -400,7 +576,7 @@ class App {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div>
             <h1 style="font-size: 1.8rem; font-weight: 800;">Opportunity Pipeline</h1>
-            <p style="color: var(--text-secondary);">Weighted Forecasting: <span style="color: var(--accent-success); font-weight: 700;">$${metrics.weightedPipelineValue.toLocaleString()}</span> &#10003; Win Rate: ${metrics.winRatePercentage}%</p>
+            <p style="color: var(--text-secondary);">Weighted Forecasting: <span style="color: var(--accent-success); font-weight: 700;">$${metrics.weightedPipelineValue.toLocaleString()}</span> &bull; Win Rate: ${metrics.winRatePercentage}%</p>
           </div>
         </div>
 
@@ -468,7 +644,7 @@ class App {
                     <td style="font-weight: 700; color: var(--accent-secondary);">${t.ticketNumber}</td>
                     <td style="font-weight: 600; color: #fff;">${t.subject}</td>
                     <td><span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span></td>
-                    <td><span class="badge badge-${t.status === 'Resolved' &#10003; 'low' : 'growth'}">${t.status}</span></td>
+                    <td><span class="badge badge-${t.status === 'Resolved' ? 'low' : 'growth'}">${t.status}</span></td>
                     <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(t.resolutionDueAt).toLocaleString()}</td>
                   </tr>
                 `).join('')}
@@ -503,7 +679,7 @@ class App {
               <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div>
                   <div style="font-weight: 600; color: #fff;">${task.title}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} &#10003; <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span></div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} &bull; <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span></div>
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="window.app.completeTask('${task.id}')">&#10003; Done</button>
               </div>
@@ -561,10 +737,10 @@ class App {
                     <td>$${inv.subtotal.toLocaleString()}</td>
                     <td>$${inv.taxAmount.toLocaleString()}</td>
                     <td style="font-weight: 800; color: var(--accent-success);">$${inv.total.toLocaleString()}</td>
-                    <td><span class="badge badge-${inv.status === 'Paid' &#10003; 'low' : 'growth'}">${inv.status}</span></td>
+                    <td><span class="badge badge-${inv.status === 'Paid' ? 'low' : 'growth'}">${inv.status}</span></td>
                     <td>${inv.dueDate}</td>
                     <td>
-                      ${inv.status !== 'Paid' &#10003; `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981;">&#10003; Cleared</span>'}
+                      ${inv.status !== 'Paid' ? `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981;">&#10003; Cleared</span>'}
                     </td>
                   </tr>
                 `).join('')}
@@ -597,7 +773,7 @@ class App {
             <div class="glass-panel" style="padding: 22px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">${wf.name}</div>
-                <span class="badge badge-${wf.isActive &#10003; 'low' : 'standard'}">${wf.isActive &#10003; 'Active' : 'Paused'}</span>
+                <span class="badge badge-${wf.isActive ? 'low' : 'standard'}">${wf.isActive ? 'Active' : 'Paused'}</span>
               </div>
               <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px;">${wf.description || ''}</p>
               <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.82rem;">
@@ -616,7 +792,7 @@ class App {
   async renderAudits(container) {
     container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading CDC Audit Trail...</div>';
     try {
-      const res = await window.api.get('/audits&#10003;limit=50');
+      const res = await window.api.get('/audits?limit=50');
       const logs = res.data;
 
       container.innerHTML = `
@@ -641,7 +817,7 @@ class App {
                 ${logs.map(l => `
                   <tr>
                     <td style="font-size: 0.82rem; color: var(--text-muted);">${new Date(l.timestamp).toLocaleString()}</td>
-                    <td><span class="badge badge-${l.action === 'CREATE' &#10003; 'low' : (l.action === 'DELETE' &#10003; 'high' : 'growth')}">${l.action}</span></td>
+                    <td><span class="badge badge-${l.action === 'CREATE' ? 'low' : (l.action === 'DELETE' ? 'high' : 'growth')}">${l.action}</span></td>
                     <td style="font-weight: 600; color: #fff;">${l.entityType}</td>
                     <td>${l.actorEmail || 'System'}</td>
                     <td style="font-family: monospace; color: var(--text-muted);">${l.ipAddress || 'Internal'}</td>
