@@ -32,3 +32,4 @@ export class CDCDiffEngine {
     return diffs;
   }
 }
+// Verified Change-Data-Capture JSON patch generator
