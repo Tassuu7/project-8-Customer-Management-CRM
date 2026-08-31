@@ -28,8 +28,8 @@ def get_part4():
                   ${stageLeads.map(l => `
                     <div class="kanban-card">
                       <div class="card-company">${l.company}</div>
-                      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">${l.firstName} ${l.lastName}</div>
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">${l.firstName} ${l.lastName} &bull; ${l.email || ''}</div>
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                         <span class="badge badge-growth">Score: ${l.score}/100</span>
                         <button class="btn btn-primary btn-sm" onclick="window.app.convertLeadQuick('${l.id}')">Convert &rarr;</button>
                       </div>
@@ -47,7 +47,7 @@ def get_part4():
   }
 
   async renderDeals(container) {
-    container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading Deal Pipeline...</div>';
+    container.innerHTML = '<div class="glass-panel" style="padding: 40px; text-align: center;">Loading Opportunity Pipeline...</div>';
     try {
       const [dealsRes, metricsRes] = await Promise.all([
         window.api.get('/deals'),
@@ -62,8 +62,9 @@ def get_part4():
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div>
             <h1 style="font-size: 1.8rem; font-weight: 800;">Opportunity Pipeline</h1>
-            <p style="color: var(--text-secondary);">Weighted Forecasting: <span style="color: var(--accent-success); font-weight: 700;">$${metrics.weightedPipelineValue.toLocaleString()}</span> &bull; Win Rate: ${metrics.winRatePercentage}%</p>
+            <p style="color: var(--text-secondary);">Weighted Pipeline: <strong style="color: var(--accent-success);">$${metrics.weightedPipelineValue.toLocaleString()}</strong> &bull; Win Rate: <strong>${metrics.winRatePercentage}%</strong></p>
           </div>
+          <button class="btn btn-primary" onclick="window.app.openCreateDealModal()">+ New Deal</button>
         </div>
 
         <div class="kanban-board">
@@ -85,6 +86,11 @@ def get_part4():
                         <span>Prob: ${d.probability}%</span>
                         <span>Close: ${d.expectedCloseDate}</span>
                       </div>
+                      ${d.stage !== 'Won' ? `
+                        <div style="margin-top: 8px; text-align: right;">
+                          <button class="btn btn-secondary btn-sm" onclick="window.app.advanceDealStage('${d.id}')">Advance Stage &rarr;</button>
+                        </div>
+                      ` : '<div style="font-size: 0.78rem; color: var(--accent-success); font-weight: 700; margin-top: 6px;">&#10003; Closed Won</div>'}
                     </div>
                   `).join('')}
                 </div>
@@ -165,9 +171,11 @@ def get_part4():
               <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div>
                   <div style="font-weight: 600; color: #fff;">${task.title}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} &bull; <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span></div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Due: ${task.dueDate} &bull; <span class="badge badge-${task.priority.toLowerCase()}">${task.priority}</span> &bull; <span class="badge badge-${task.status === 'Completed' ? 'low' : 'growth'}">${task.status}</span></div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.app.completeTask('${task.id}')">&#10003; Done</button>
+                ${task.status !== 'Completed' ? `
+                  <button class="btn btn-secondary btn-sm" onclick="window.app.completeTask('${task.id}')">&#10003; Done</button>
+                ` : '<span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">&#10003; Completed</span>'}
               </div>
             `).join('')}
           </div>
@@ -226,7 +234,7 @@ def get_part4():
                     <td><span class="badge badge-${inv.status === 'Paid' ? 'low' : 'growth'}">${inv.status}</span></td>
                     <td>${inv.dueDate}</td>
                     <td>
-                      ${inv.status !== 'Paid' ? `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981;">&#10003; Cleared</span>'}
+                      ${inv.status !== 'Paid' ? `<button class="btn btn-primary btn-sm" onclick="window.app.payInvoice('${inv.id}')">Mark Paid</button>` : '<span style="color: #10b981; font-weight: 700;">&#10003; Cleared</span>'}
                     </td>
                   </tr>
                 `).join('')}
@@ -321,12 +329,26 @@ def get_part4():
 
   async convertLeadQuick(leadId) {
     try {
-      await window.api.post(`/leads/${leadId}/convert`, {
-        createDeal: true,
-        dealAmount: 85000
-      });
-      this.showToast('Lead successfully converted into Account, Contact, and Opportunity Deal!', 'success');
+      await window.api.post(`/leads/${leadId}/convert`, { createDeal: true, dealAmount: 85000 });
+      this.showToast('Lead successfully converted into Account, Contact & Opportunity Deal!', 'success');
       this.handleRoute();
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  }
+
+  async advanceDealStage(dealId) {
+    try {
+      const stages = ['Discovery', 'Demo', 'Proposal', 'Negotiation', 'Won'];
+      const res = await window.api.get('/deals');
+      const deal = (res.data || []).find(d => d.id === dealId);
+      if (deal) {
+        const curIdx = stages.indexOf(deal.stage);
+        const nextStage = curIdx < stages.length - 1 ? stages[curIdx + 1] : 'Won';
+        await window.api.patch(`/deals/${dealId}/stage`, { stage: nextStage });
+        this.showToast(`Deal advanced to ${nextStage}!`, 'success');
+        this.handleRoute();
+      }
     } catch (err) {
       this.showToast(err.message, 'error');
     }
@@ -352,42 +374,218 @@ def get_part4():
     }
   }
 
-  openCreateCustomerModal() {
-    const name = prompt('Enter Customer Account Name:');
-    if (!name) return;
-    const domain = prompt('Enter Website Domain (e.g. company.com):') || `${name.toLowerCase().replace(/\s+/g, '')}.com`;
-    const tier = prompt('Enter Tier (Enterprise, Growth, Standard):') || 'Growth';
+  // Interactive Modal System
+  openModal(title, bodyHtml, onSave) {
+    this.closeModal();
+    const modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'active-modal-backdrop';
+    modalBackdrop.className = 'modal-backdrop active';
+    modalBackdrop.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">${title}</div>
+          <button class="modal-close" onclick="window.app.closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${bodyHtml}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalBackdrop);
+  }
 
-    window.api.post('/customers', {
-      name,
-      domain,
-      tier,
-      annualRevenue: 500000,
-      industry: 'Technology'
-    }).then(() => {
-      this.showToast('Customer created successfully', 'success');
+  closeModal() {
+    const existing = document.getElementById('active-modal-backdrop');
+    if (existing) existing.remove();
+  }
+
+  openCreateCustomerModal() {
+    const formHtml = `
+      <form onsubmit="event.preventDefault(); window.app.submitCreateCustomer();">
+        <div class="form-group">
+          <label class="form-label">Account / Company Name *</label>
+          <input type="text" id="modal-cust-name" required placeholder="e.g. Apex Global Solutions" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website Domain *</label>
+          <input type="text" id="modal-cust-domain" required placeholder="e.g. apexsolutions.io" class="form-input">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Industry Vertical</label>
+            <select id="modal-cust-industry" class="form-select">
+              <option value="Technology">Technology</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Financial Services">Financial Services</option>
+              <option value="Cloud Computing">Cloud Computing</option>
+              <option value="Cybersecurity">Cybersecurity</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Account Tier</label>
+            <select id="modal-cust-tier" class="form-select">
+              <option value="Enterprise">Enterprise</option>
+              <option value="Growth">Growth</option>
+              <option value="Standard">Standard</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Annual Contract Revenue ($)</label>
+          <input type="number" id="modal-cust-rev" required value="250000" class="form-input">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Customer Account</button>
+        </div>
+      </form>
+    `;
+    this.openModal('Add New Customer Account', formHtml);
+  }
+
+  async submitCreateCustomer() {
+    const name = document.getElementById('modal-cust-name').value;
+    const domain = document.getElementById('modal-cust-domain').value;
+    const industry = document.getElementById('modal-cust-industry').value;
+    const tier = document.getElementById('modal-cust-tier').value;
+    const annualRevenue = Number(document.getElementById('modal-cust-rev').value);
+
+    try {
+      await window.api.post('/customers', { name, domain, industry, tier, annualRevenue });
+      this.showToast(`Customer account "${name}" created successfully!`, 'success');
+      this.closeModal();
       this.handleRoute();
-    }).catch(err => this.showToast(err.message, 'error'));
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
   }
 
   openCreateLeadModal() {
-    const comp = prompt('Enter Company Name:');
-    if (!comp) return;
-    const fn = prompt('Lead First Name:') || 'John';
-    const ln = prompt('Lead Last Name:') || 'Doe';
-    const em = prompt('Lead Email:') || `john@${comp.toLowerCase().replace(/\s+/g, '')}.com`;
+    const formHtml = `
+      <form onsubmit="event.preventDefault(); window.app.submitCreateLead();">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input type="text" id="modal-lead-fn" required placeholder="John" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input type="text" id="modal-lead-ln" required placeholder="Doe" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Name *</label>
+          <input type="text" id="modal-lead-company" required placeholder="e.g. CyberSecurity Systems" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email *</label>
+          <input type="email" id="modal-lead-email" required placeholder="john@cybersecurity.io" class="form-input">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Source Channel</label>
+            <select id="modal-lead-source" class="form-select">
+              <option value="Website">Website</option>
+              <option value="Inbound">Inbound Demo</option>
+              <option value="Referral">Executive Referral</option>
+              <option value="LinkedIn">LinkedIn Outreach</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estimated Budget ($)</label>
+            <input type="number" id="modal-lead-budget" required value="75000" class="form-input">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Inbound Lead</button>
+        </div>
+      </form>
+    `;
+    this.openModal('Add Inbound Lead Opportunity', formHtml);
+  }
 
-    window.api.post('/leads', {
-      company: comp,
-      firstName: fn,
-      lastName: ln,
-      email: em,
-      source: 'Website',
-      estimatedBudget: 75000
-    }).then(() => {
-      this.showToast('Inbound lead recorded', 'success');
+  async submitCreateLead() {
+    const firstName = document.getElementById('modal-lead-fn').value;
+    const lastName = document.getElementById('modal-lead-ln').value;
+    const company = document.getElementById('modal-lead-company').value;
+    const email = document.getElementById('modal-lead-email').value;
+    const source = document.getElementById('modal-lead-source').value;
+    const estimatedBudget = Number(document.getElementById('modal-lead-budget').value);
+
+    try {
+      await window.api.post('/leads', { firstName, lastName, company, email, source, estimatedBudget });
+      this.showToast(`Inbound lead for ${company} recorded!`, 'success');
+      this.closeModal();
       this.handleRoute();
-    }).catch(err => this.showToast(err.message, 'error'));
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  }
+
+  async openCreateDealModal() {
+    let accounts = [];
+    try {
+      const res = await window.api.get('/customers');
+      accounts = res.data || [];
+    } catch (e) {}
+
+    const formHtml = `
+      <form onsubmit="event.preventDefault(); window.app.submitCreateDeal();">
+        <div class="form-group">
+          <label class="form-label">Opportunity Deal Title *</label>
+          <input type="text" id="modal-deal-title" required placeholder="e.g. Enterprise Cloud License Phase 1" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Customer Account *</label>
+          <select id="modal-deal-account" class="form-select">
+            ${accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Deal Amount ($) *</label>
+            <input type="number" id="modal-deal-amount" required value="150000" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Stage</label>
+            <select id="modal-deal-stage" class="form-select">
+              <option value="Discovery">Discovery</option>
+              <option value="Demo">Demo</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Won">Won</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Close Date</label>
+          <input type="date" id="modal-deal-date" required value="2026-10-31" class="form-input">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Opportunity Deal</button>
+        </div>
+      </form>
+    `;
+    this.openModal('Create Opportunity Deal', formHtml);
+  }
+
+  async submitCreateDeal() {
+    const title = document.getElementById('modal-deal-title').value;
+    const accountId = document.getElementById('modal-deal-account').value;
+    const amount = Number(document.getElementById('modal-deal-amount').value);
+    const stage = document.getElementById('modal-deal-stage').value;
+    const expectedCloseDate = document.getElementById('modal-deal-date').value;
+
+    try {
+      await window.api.post('/deals', { title, accountId, amount, stage, expectedCloseDate });
+      this.showToast(`Opportunity "${title}" created!`, 'success');
+      this.closeModal();
+      this.handleRoute();
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
   }
 }
 
