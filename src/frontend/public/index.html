@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex OmniCustomer 360 - Enterprise Customer Management & CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/kanban.css">
+  <link rel="stylesheet" href="css/timeline.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">?</div>
+        <div class="brand-text">OmniCustomer 360</div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-category">Core Platform</li>
+        <li class="nav-item"><a href="#dashboard" class="nav-link active"><span class="nav-icon">??</span> Executive Dashboard</a></li>
+        <li class="nav-item"><a href="#customers" class="nav-link"><span class="nav-icon">??</span> Customer Accounts</a></li>
+        <li class="nav-item"><a href="#leads" class="nav-link"><span class="nav-icon">??</span> Leads Kanban</a></li>
+        <li class="nav-item"><a href="#deals" class="nav-link"><span class="nav-icon">??</span> Opportunity Pipeline</a></li>
+
+        <li class="sidebar-category">Operations & Support</li>
+        <li class="nav-item"><a href="#tickets" class="nav-link"><span class="nav-icon">??</span> Service Desk SLA</a></li>
+        <li class="nav-item"><a href="#activities" class="nav-link"><span class="nav-icon">??</span> Activities & Tasks</a></li>
+        <li class="nav-item"><a href="#billing" class="nav-link"><span class="nav-icon">??</span> Invoices & Billing</a></li>
+
+        <li class="sidebar-category">Intelligence & Control</li>
+        <li class="nav-item"><a href="#workflows" class="nav-link"><span class="nav-icon">?</span> Automation Engine</a></li>
+        <li class="nav-item"><a href="#audits" class="nav-link"><span class="nav-icon">???</span> CDC Audit Trail</a></li>
+      </ul>
+
+      <div class="sidebar-user">
+        <img class="user-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" alt="Avatar">
+        <div class="user-info">
+          <div class="user-name" id="header-user-name">Sarah Connor</div>
+          <div class="user-role" id="header-user-role">Super Administrator</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <header class="app-header">
+        <div class="search-bar">
+          <span>??</span>
+          <input type="text" id="global-search" class="search-input" placeholder="Search customers, contacts, deals, tickets...">
+          <span class="search-shortcut">Ctrl+K</span>
+        </div>
+
+        <div class="header-actions">
+          <div class="action-btn">
+            <span>??</span>
+            <div class="notification-dot"></div>
+          </div>
+          <div class="action-btn" onclick="window.location.reload()">
+            <span>??</span>
+          </div>
+        </div>
+      </header>
+
+      <div id="view-container" class="view-container"></div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/chart-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
