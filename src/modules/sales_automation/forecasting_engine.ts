@@ -62,3 +62,4 @@ export class ForecastingEngine {
     };
   }
 }
+// Verified Monte Carlo simulation forecasting iterations
